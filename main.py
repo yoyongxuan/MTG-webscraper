@@ -3,7 +3,7 @@ from urllib.request import urlopen
 import urllib
 import re
 import csv
-import ast
+import json
 
 def write_to_file(filename,nestedlist):
     with open(filename,'w',newline='') as f:
@@ -101,10 +101,12 @@ def manapro_scrape_page(url):
     print(len(product_list))
     for product in product_list:
         script = product.get_text()
-        what = script.split('"sku"')
-        for why in what:
-            print(why)
-            print('\n\n')
+        what = script.split('\n')
+        thing = what[2].strip("product = ,",)
+        print(thing)
+        print("\n\n")
+        result = json.loads(thing)
+        print(result)
         
         break
         
