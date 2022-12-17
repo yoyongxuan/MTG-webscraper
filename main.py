@@ -34,21 +34,30 @@ def greyogregames_scrape_page(url):
         # print("\n\n")
         
 
-        available_cards = product.find("div", class_= "hoverMask").find_all("p")
+        available_cards = product.find("div", class_= "hoverMask").find_all("div",class_="addNow single")
         for card in available_cards:
-            quality_foil,price = card.get_text().split('-')
+            quality_foil,price = card.p.get_text().split('-')
             price = int(re.sub(r'[^0-9]', '', price))
+            quantity = card["onclick"].split(',')[-2]
+            if 'Foil' in quality_foil:
+                foil = True
+                quality = quality_foil.replace('Foil','').strip()
+            else:
+                foil = False
+                quality = quality_foil
             
-            # print("Card")
-            # print(card.prettify())
-            # print([name,set,quality_foil,price])
-            # print("\n\n")
             
-            cardlist.append([name,set,quality_foil,price])
+            print("Card")
+            print(card.prettify())
+            print([name,set,quality,foil,price,quantity])
+            print(foil)
+            print("\n\n")
+            
+            cardlist.append([name,set,quality,foil,price,quantity])
             
             
         if len(available_cards) == 0:
-            cardlist.append([name,None,None,"Sold Out"])
+            cardlist.append([name,None,None,None,"Sold Out",0])
             
             
     next_page = soup.find_all("a",class_="pagination-item pagination-next")
