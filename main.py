@@ -13,7 +13,7 @@ def write_to_file(filename,nestedlist):
             print(listing)
 
 #url = 'https://www.greyogregames.com/search?q=*rhystic+study*'
-url = 'https://www.greyogregames.com/search?q=*kogla*'
+#url = 'https://www.greyogregames.com/search?q=*kogla*'
 #url = 'https://www.greyogregames.com/collections/mtg-singles-all-products'
 
 def greyogregames_scrape_page(url):
@@ -98,17 +98,20 @@ def manapro_scrape_page(url):
     soup = BeautifulSoup(html, "html.parser")
     #print(soup.prettify())
     product_list = soup.find("ul",id="main-collection-product-grid").find_all("script")
-    print(len(product_list))
     for product in product_list:
         script = product.get_text()
-        what = script.split('\n')
-        thing = what[2].strip("product = ,",)
-        print(thing)
-        print("\n\n")
-        result = json.loads(thing)
-        print(result)
+        script = script.split('\n')
+        script = script[2].strip("product = ,",)
+        products = json.loads(script)
+        variants = products["variants"]
+        for variant in variants:
+            #print(variant)
+            name = variant['name']
+            sku = variant['sku']
+            price = variant['price']
+            cardlist.append([name,sku,price])
         
-        break
+    
         
 
 #         name_set = product.find('p',class_="productTitle").get_text()
@@ -146,24 +149,25 @@ def manapro_scrape_page(url):
 #             cardlist.append([name,None,None,None,"Sold Out",0])
             
             
-#     next_page = soup.find_all("a",class_="pagination-item pagination-next")
-#     if len(next_page) > 0:
-#         next_page_url = 'https://www.greyogregames.com' + next_page[0]['href']
-#     else:
-#         next_page_url = None      
+    next_page = soup.find("div",class_="pag_next").find_all("a")
+    if len(next_page) > 0:
+        next_page_url = 'https://sg-manapro.com/' + next_page[0]['href']
+    else:
+        next_page_url = None      
 #         # print(name)
 #         # print(price)
 #         # print('\n\n')
-#     return cardlist,next_page_url
+    return cardlist,next_page_url
 
 
-# def greyogregames_scraper(url):
-#     greyogregames_cardlist = []
-#     while url != None:
-#         cardlist,url = greyogregames_scrape_page(url)
-#         greyogregames_cardlist.extend(cardlist)
+def manapro_scraper(url):
+    manapro_cardlist = []
+    while url != None:
+        cardlist,url = manapro_scrape_page(url)
+        manapro_cardlist.extend(cardlist)
 
-#     return greyogregames_cardlist
+    return manapro_cardlist
 
 url = 'https://sg-manapro.com/collections/jumpstart-2022'
-manapro_scrape_page(url)
+manapro_cardlist = manapro_scraper(url)
+write_to_file('manapro_cardlist.csv',manapro_cardlist)
