@@ -37,24 +37,24 @@ def greyogregames_scrape_page(url):
 
         available_cards = product.find("div", class_= "hoverMask").find_all("div",class_="addNow single")
         for card in available_cards:
-            quality_foil,price = card.p.get_text().split('-')
+            condition_foil,price = card.p.get_text().split('-')
             price = int(re.sub(r'[^0-9]', '', price))
             quantity = card["onclick"].split(',')[-2]
-            if 'Foil' in quality_foil:
+            if 'Foil' in condition_foil:
                 foil = True
-                quality = quality_foil.replace('Foil','').strip()
+                condition = condition_foil.replace('Foil','').strip()
             else:
                 foil = False
-                quality = quality_foil.strip()
+                condition = condition_foil.strip()
             
             
             # print("Card")
             # print(card.prettify())
-            # print([name,set,quality,foil,price,quantity])
+            # print([name,set,condition,foil,price,quantity])
             # print(foil)
             # print("\n\n")
             
-            cardlist.append([name,set,quality,foil,price,quantity])
+            cardlist.append([name,set,condition,foil,price,quantity])
             
             
         if len(available_cards) == 0:
@@ -168,6 +168,73 @@ def manapro_scraper(url):
 
     return manapro_cardlist
 
-url = 'https://sg-manapro.com/collections/jumpstart-2022'
-manapro_cardlist = manapro_scraper(url)
-write_to_file('manapro_cardlist.csv',manapro_cardlist)
+# url = 'https://sg-manapro.com/collections/jumpstart-2022'
+# manapro_cardlist = manapro_scraper(url)
+# write_to_file('manapro_cardlist.csv',manapro_cardlist)
+
+
+
+def gameshaven_scrape_page(url):
+    print(url)
+    cardlist = []
+    page = urlopen(url)
+    html = page.read().decode("utf-8")
+    soup = BeautifulSoup(html, "html.parser")
+    product_list = soup.find_all("div",class_="productCard__card")
+    for product in product_list:
+        
+        productCard_lower = product.find('div',class_="productCard__lower")
+        name = productCard_lower.find('p',class_="productCard__title").get_text().strip()
+        set = productCard_lower.find('p',class_="productCard__setName").get_text()
+
+        # print("Product")
+        # print(product.prettify())
+        # print("\n\n")
+        # print(set)
+        # print(name)
+        
+        available_cards = productCard_lower.find("ul", class_= "productChip__grid").find_all("li")
+        for card in available_cards:
+            if card['data-variantavailable'] == 'true':
+                quantity = card['data-variantqty']
+                price = card['data-variantprice']
+                condition_foil = card['data-varianttitle']
+                
+                if 'Foil' in condition_foil:
+                    foil = True
+                    condition = condition_foil.replace('Foil','').strip()
+                else:
+                    foil = False
+                    condition = condition_foil.strip()
+                    
+                cardlist.append([name,set,condition,foil,price,quantity])
+            
+    #         # print("Card")
+    #         # print(card.prettify())
+    #         # print([name,set,quality,foil,price,quantity])
+    #         # print(foil)
+    #         # print("\n\n")
+            
+            
+            
+    pagination = soup.find("ol",class_="pagination")
+    next_page = pagination.find_all("li")[-1]
+    if next_page.has_attr('class'):
+        next_page_url = None
+    else:
+        next_page_url = 'https://www.gameshaventcg.com/' + next_page.a['href']
+    return cardlist,next_page_url
+
+def gameshaven_scraper(url):
+    gameshaven_cardlist = []
+    while url != None:
+        cardlist,url = gameshaven_scrape_page(url)
+        gameshaven_cardlist.extend(cardlist)
+
+    return gameshaven_cardlist
+    
+url = 'https://www.gameshaventcg.com/search?page=1&q=%2Acultivate%2A'
+#url = "https://www.gameshaventcg.com/search?page=1&q=%2A%2A"
+gameshaven_cardlist = gameshaven_scraper(url)
+print(gameshaven_cardlist)
+write_to_file('gameshaven_cardlist.csv',gameshaven_cardlist)
