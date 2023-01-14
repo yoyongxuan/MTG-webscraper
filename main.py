@@ -186,12 +186,6 @@ def gameshaven_scrape_page(url):
         productCard_lower = product.find('div',class_="productCard__lower")
         name = productCard_lower.find('p',class_="productCard__title").get_text().strip()
         set = productCard_lower.find('p',class_="productCard__setName").get_text()
-
-        # print("Product")
-        # print(product.prettify())
-        # print("\n\n")
-        # print(set)
-        # print(name)
         
         available_cards = productCard_lower.find("ul", class_= "productChip__grid").find_all("li")
         for card in available_cards:
@@ -208,15 +202,7 @@ def gameshaven_scrape_page(url):
                     condition = condition_foil.strip()
                     
                 cardlist.append([name,set,condition,foil,price,quantity])
-            
-    #         # print("Card")
-    #         # print(card.prettify())
-    #         # print([name,set,quality,foil,price,quantity])
-    #         # print(foil)
-    #         # print("\n\n")
-            
-            
-            
+      
     pagination = soup.find("ol",class_="pagination")
     next_page = pagination.find_all("li")[-1]
     if next_page.has_attr('class'):
@@ -233,8 +219,54 @@ def gameshaven_scraper(url):
 
     return gameshaven_cardlist
     
-url = 'https://www.gameshaventcg.com/search?page=1&q=%2Acultivate%2A'
+#url = 'https://www.gameshaventcg.com/search?page=1&q=%2Acultivate%2A'
 #url = "https://www.gameshaventcg.com/search?page=1&q=%2A%2A"
-gameshaven_cardlist = gameshaven_scraper(url)
-print(gameshaven_cardlist)
-write_to_file('gameshaven_cardlist.csv',gameshaven_cardlist)
+# gameshaven_cardlist = gameshaven_scraper(url)
+# print(gameshaven_cardlist)
+# write_to_file('gameshaven_cardlist.csv',gameshaven_cardlist)
+
+def agorahobby_scrape_page(url):
+    print(url)
+    cardlist = []
+    page = urlopen(url)
+    html = page.read().decode("utf-8")
+    soup = BeautifulSoup(html, "html.parser")
+    product_list = soup.find_all("div",class_="store-item")
+    for product in product_list:
+        script = product.find('script',type="text/javascript").get_text()
+        script = re.findall('\=(.*?)\;', script)[2]
+        product_info = json.loads(script)
+        if len(product_info['stock']) != 1:
+            raise Exception('bruh')
+        sku = product_info['stock'][0]['sku']
+        quantity = product_info['stock'][0]['stock_level']
+        price = product_info['price']
+        regular_price = product_info['regular_price']
+        sale_price = product_info['sale_price']
+        title = product.find('div',class_="store-item-title").get_text()
+        
+        cardlist.append([title,sku,quantity,price,regular_price,sale_price])
+    
+    next_page = soup.find_all("a",class_="page-next")
+    if len(next_page) > 0:
+        next_page_url = next_page[0]['href']
+    else:
+        next_page_url = None
+    
+    return cardlist,next_page_url
+
+def agorahobby_scraper(url):
+    agorahobby_cardlist = []
+    while url != None:
+        cardlist,url = agorahobby_scrape_page(url)
+        agorahobby_cardlist.extend(cardlist)
+
+    return agorahobby_cardlist
+
+
+url = 'https://agorahobby.com/store/search?category=mtg&searchfield=cultivate&search=GO'
+#url = 'https://agorahobby.com/store/search?category=mtg&searchfield=lightning+bolt&search=GO'
+agorahobby_cardlist = agorahobby_scraper(url)
+write_to_file('agorahobby_cardlist.csv',agorahobby_cardlist)
+
+
